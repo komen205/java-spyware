@@ -21,7 +21,7 @@ import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 
-public class SendToDBService extends Service
+public class SendToDBService<jstring> extends Service
 {
     public JSONObject json;
     public String uri;
@@ -33,10 +33,18 @@ public class SendToDBService extends Service
         this.uri = uri;
 
     }
+    static {
+        System.loadLibrary("myapplication");
+    }
+    public native String stringFromJNI(String test);
+
 
 
     protected SendToDBService perform(Context context){
-        final String requestBody = this.json.toString();
+        //Log.i("DEBUG", stringFromJNI(this.json.toString()));
+
+        final String requestBody = stringFromJNI(this.json.toString());
+
 
         RequestQueue mRequestQueue = Volley.newRequestQueue(context);
 
