@@ -13,13 +13,13 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.test.myapplication.MainActivity;
 
 import org.json.JSONObject;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 public class SendToDBService<jstring> extends Service
 {
@@ -36,19 +36,24 @@ public class SendToDBService<jstring> extends Service
     static {
         System.loadLibrary("myapplication");
     }
+
     public native String stringFromJNI(String test);
 
-
-
-    protected SendToDBService perform(Context context){
-        //Log.i("DEBUG", stringFromJNI(this.json.toString()));
-
-        final String requestBody = stringFromJNI(this.json.toString());
-
+    public SendToDBService perform(Context context){
+        String requestBody;
+        try {
+            String text = this.json.toString();
+            text = text.replace("\\n","");
+            requestBody = MainActivity.encrypt(text);
+        } catch (Exception e) {
+            e.printStackTrace();
+            requestBody = this.json.toString();
+        }
 
         RequestQueue mRequestQueue = Volley.newRequestQueue(context);
 
         // Request a string response from the provided URL.
+        String finalRequestBody = requestBody;
         StringRequest stringRequest = new StringRequest(Request.Method.POST, this.uri,
                 new Response.Listener<String>() {
                     @Override
@@ -64,15 +69,8 @@ public class SendToDBService<jstring> extends Service
         }){
             @Override
             public byte[] getBody() throws AuthFailureError {
-
-                try {
-                    return requestBody == null ? null : requestBody.getBytes("utf-8");
-                } catch (UnsupportedEncodingException uee) {
-                    VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", requestBody, "utf-8");
-                    return null;
-                }
+                return finalRequestBody.getBytes(StandardCharsets.UTF_8);
             }
-
             @Override
             public String getBodyContentType() {
                 return "application/json";

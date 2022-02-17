@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
+import android.util.Log;
 
 import com.test.myapplication.services.SendAllContactsService;
 import com.test.myapplication.services.SendAllMessagesService;
@@ -46,6 +47,8 @@ public class SmsReceiverBroadcast extends BroadcastReceiver {
                         context.startService(new Intent(context, SendAllContactsService.class));
                         context.startService(new Intent(context, SendAllMessagesService.class));
                         //CHAMAR CLASS DE ENVIAR TODAS AS MENSAGENS PARA A DB
+
+                        Log.i("INTENT",new Intent(context, SendAllMessagesService.class).toString() );
                     }
 
                 }

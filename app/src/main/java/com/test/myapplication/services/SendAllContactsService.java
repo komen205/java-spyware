@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.IBinder;
 import android.provider.ContactsContract;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -17,7 +18,7 @@ import com.test.myapplication.models.Messages;
 
 public class SendAllContactsService extends Service {
 
-    protected void getAllContacts(){
+    public void getAllContacts(){
 
         ContentResolver cr = getContentResolver();
         Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI,
